@@ -8,3 +8,8 @@ class Cell:
     
     def appear(self):
         self.color = "black"
+
+
+class InitialPopulation:
+    def __init__(self) -> None:
+        pass
