@@ -1,9 +1,10 @@
 class Cell:
-    def __init__(self) -> None:
+    def __init__(self, color) -> None:
+        self.color = color
         pass
 
     def die(self):
-        raise NotImplementedError
+        self.color = "white"
     
     def appear(self):
-        raise NotImplementedError
+        self.color = "black"
