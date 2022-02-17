@@ -6,8 +6,9 @@ class Case:
         self.down_left_corner_absciss = down_left_corner_absciss
         self.down_left_corner_ordinate = down_left_corner_ordinate
 
+    @classmethod
     def create_grid(self):
         for abciss in range(self.MAX_ABCISS):
             for ordinate in range(self.MAX_ORDINATE):
                 case = Case(abciss, ordinate)
-        raise NotImplementedError
+
