@@ -1,30 +1,10 @@
-from turtle import width
+from os import stat
 from typing import Tuple, List
 import tkinter as tk
 from tkinter import Button, Grid, ttk
-import random as rd
 import numpy as np
+from utils import nb_of_black_cells
 
-def nb_of_black_cells(all_colors: np.ndarray, coordinates: Tuple[int, int]):
-    abcisses, ordinates = [], []
-    width, height = all_colors.shape
-
-    if coordinates[0]==0:
-        abcisses = [coordinates[0], coordinates[0]+1]
-    if coordinates[0]==width - 1:
-        abcisses = [coordinates[0]-1, coordinates[0]]
-    if coordinates[1]==0:
-        ordinates = [coordinates[1], coordinates[1]+1]
-    if coordinates[1]==height - 1:
-        ordinates = [coordinates[1]-1, coordinates[1]]
-    if not ordinates:
-        ordinates = range(coordinates[1]-1, coordinates[1]+2)
-    if not abcisses:
-        abcisses = range(coordinates[0]-1, coordinates[0]+2)
-
-    cell_colors = [all_colors[i][j] for i in abcisses for j in ordinates if (j!=coordinates[1] or i!=coordinates[0])]
-    neighbours = cell_colors.count(1)
-    return neighbours
 
 class Grid(tk.Canvas):
     CELL_WIDTH = 25
@@ -34,21 +14,55 @@ class Grid(tk.Canvas):
 
     def __init__(self, container):
         super().__init__(container, height=600, width=1000)
-        self.pack()
         self.cells = []
         self.colors = np.empty((Grid.NB_CASES_WIDTH, Grid.NB_CASES_HEIGHT))
         self.neighbours = np.empty((Grid.NB_CASES_WIDTH, Grid.NB_CASES_HEIGHT))
+        self.reproduction = None
+
+        self.__game_setup()
+
+    def __game_setup(self):
+        self.button_start = Button(self, text="Start", command=self.start_life, state="disabled")
+        _ = self.create_window(10, 550, anchor="nw", window=self.button_start)
+        self.button_stop = Button(self, text="Stop", command=self.stop_life, state="disabled")
+        _ = self.create_window(100, 550, anchor="nw", window=self.button_stop)
+        self.button_restart = Button(self, text="Restart", command=self.restart, state="disabled")
+        _ = self.create_window(190, 550, anchor="nw", window=self.button_restart)
+        self.pack()
 
         self.create_grid()
-        self.initial_configuration([
-            (5, 5),
-            (6, 5),
-            (7, 6)
-        ])
-        button_start = Button(self, text="Start", command=self.start_life)
-        button_window = self.create_window(10, 550, anchor="nw", window=button_start)
+
+    def __change_color(self, coordinates):
+        """ Changes the color of the cell """
+        self.button_start['state']="normal"
+        x, y = coordinates
+        if self.colors[x][y]==1:
+            self.itemconfig(self.cells[x][y], fill="white")
+            self.colors[x][y]=0
+        else:
+            self.itemconfig(self.cells[x][y], fill="black")
+            self.colors[x][y]=1
+
+    def __binds_grid(self):
+        for j in range(Grid.NB_CASES_HEIGHT):
+            for i in range(Grid.NB_CASES_WIDTH):
+                self.tag_bind(self.cells[i][j], '<Button>', lambda event, coordinates=(i, j): self.__change_color(coordinates))
+
+    def __unbinds_grid(self):
+        for j in range(Grid.NB_CASES_HEIGHT):
+            for i in range(Grid.NB_CASES_WIDTH):
+                self.tag_unbind(self.cells[i][j], '<Button>')
+    
+    def __compute_all_neighbours(self):
+        for i in range(Grid.NB_CASES_WIDTH):
+            for j in range(Grid.NB_CASES_HEIGHT):
+                self.neighbours[i][j] = nb_of_black_cells(self.colors, (i, j))
 
     def create_grid(self):
+        """
+        Creates the grid on the canvas
+        Binds the cells with the click button to set the initial population
+        """
         for j in range(Grid.NB_CASES_HEIGHT):
             ordinate = (j + 1) * Grid.CELL_HEIGHT
             row = []
@@ -58,45 +72,72 @@ class Grid(tk.Canvas):
                     abciss,
                     ordinate,
                     abciss + Grid.CELL_WIDTH,
-                    ordinate + Grid.CELL_HEIGHT
+                    ordinate + Grid.CELL_HEIGHT,
+                    fill="white"
                 )]
                 self.colors[i][j] = 0
             self.cells += [row]
-    
-    def initial_configuration(self, cells_coordinates: List[Tuple[int, int]]):
-        for x, y in cells_coordinates:
-            self.itemconfig(self.cells[x][y], fill = "black")
-            self.colors[x][y] = 1
+        self.__binds_grid()
     
     def not_extinct(self):
+        """ Checks if the population not extinct """
         cell_colors = [self.colors[i][j] for j in range(Grid.NB_CASES_HEIGHT) for i in range(Grid.NB_CASES_WIDTH)]
         if cell_colors.count(1)!=0:
             return True
         return False
 
-    def __compute_all_neighbours(self):
-        for i in range(Grid.NB_CASES_WIDTH):
-            for j in range(Grid.NB_CASES_HEIGHT):
-                self.neighbours[i][j] = nb_of_black_cells(self.colors, (i, j))
-
     def one_generation(self):
+        """
+        Computes the neighbours of all cells
+        Displays the next generation of cells
+        """
         self.__compute_all_neighbours()
 
         for i in range(Grid.NB_CASES_WIDTH):
             for j in range(Grid.NB_CASES_HEIGHT):
-                cell, color, neighbours = self.cells[i][j], self.colors[i][j], self.neighbours[i][j]
+                cell, neighbours = self.cells[i][j], self.neighbours[i][j]
 
-                if color==0 and neighbours == 3:
-                    color=1
+                if self.colors[i][j]==0 and neighbours == 3:
+                    self.colors[i][j]=1
                     self.itemconfig(cell, fill = "black")
-                if color==1:
+                if self.colors[i][j]==1:
                     if neighbours not in (2, 3):
-                        color=0
+                        self.colors[i][j]=0
                         self.itemconfig(cell, fill = "white")
 
     def start_life(self):
-        if self.not_extinct():
-            self.one_generation()
+        """ Start the life processus """
+        self.button_stop['command']=self.stop_life
+        self.button_restart['state']="disabled"
+        self.button_start['state']="disabled"
+        self.button_stop['state']="normal"
+        self.button_stop['text']="Stop"
+        self.__unbinds_grid()
+        if not self.not_extinct():
+            return
+        self.one_generation()
+        self.reproduction = self.after(1000, self.start_life)
+    
+    def stop_life(self):
+        """ Stops the life processus """
+        self.button_restart['state']="normal"
+        self.button_stop['text']="Continue"
+        self.button_stop['command']=self.start_life
+        self.after_cancel(self.reproduction)
+    
+    def restart(self):
+        """
+        Empties the grid
+        Binds the cells with the click button to set the initial population
+        """
+        self.button_stop['state']="disabled"
+        self.button_restart['state']="disabled"
+        self.button_stop['text']="Stop"
+        self.colors = self.colors * 0
+        for i in range(Grid.NB_CASES_WIDTH):
+            for j in range(Grid.NB_CASES_HEIGHT):
+                self.itemconfig(self.cells[i][j], fill="white")
+        self.__binds_grid()
 
 
 class GameLife(ttk.Frame):
@@ -108,7 +149,6 @@ class GameLife(ttk.Frame):
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-
         self.title("Game of Life")
         self.geometry(str(self.winfo_screenwidth()) + 'x' + str(self.winfo_screenheight()))
 
