@@ -1,5 +1,4 @@
-from os import stat
-from typing import Tuple, List
+from typing import Tuple
 import tkinter as tk
 from tkinter import Button, Grid, ttk
 import numpy as np
@@ -11,6 +10,7 @@ class Grid(tk.Canvas):
     CELL_HEIGHT = 25
     NB_CASES_WIDTH = 19
     NB_CASES_HEIGHT = 19
+    TIME_BETWEEN_GENERATIONS = 800
 
     def __init__(self, container):
         super().__init__(container, height=600, width=1000)
@@ -32,7 +32,7 @@ class Grid(tk.Canvas):
 
         self.create_grid()
 
-    def __change_color(self, coordinates):
+    def __change_color(self, coordinates: Tuple[int, int]):
         """ Changes the color of the cell """
         self.button_start['state']="normal"
         x, y = coordinates
@@ -58,6 +58,13 @@ class Grid(tk.Canvas):
             for j in range(Grid.NB_CASES_HEIGHT):
                 self.neighbours[i][j] = nb_of_black_cells(self.colors, (i, j))
 
+    def __not_extinct(self) -> bool:
+        """ Checks if the population is not extinct """
+        cell_colors = [self.colors[i][j] for j in range(Grid.NB_CASES_HEIGHT) for i in range(Grid.NB_CASES_WIDTH)]
+        if cell_colors.count(1)!=0:
+            return True
+        return False
+
     def create_grid(self):
         """
         Creates the grid on the canvas
@@ -78,13 +85,6 @@ class Grid(tk.Canvas):
                 self.colors[i][j] = 0
             self.cells += [row]
         self.__binds_grid()
-    
-    def not_extinct(self):
-        """ Checks if the population not extinct """
-        cell_colors = [self.colors[i][j] for j in range(Grid.NB_CASES_HEIGHT) for i in range(Grid.NB_CASES_WIDTH)]
-        if cell_colors.count(1)!=0:
-            return True
-        return False
 
     def one_generation(self):
         """
@@ -107,16 +107,25 @@ class Grid(tk.Canvas):
 
     def start_life(self):
         """ Start the life processus """
-        self.button_stop['command']=self.stop_life
+        # Adapting the buttons
         self.button_restart['state']="disabled"
         self.button_start['state']="disabled"
         self.button_stop['state']="normal"
         self.button_stop['text']="Stop"
+        self.button_stop['command']=self.stop_life
+
+        # Unbinding of the grid
         self.__unbinds_grid()
-        if not self.not_extinct():
+
+        # Checking that the population is not extinct
+        if not self.__not_extinct():
             return
+
+        # Going to the next generation
         self.one_generation()
-        self.reproduction = self.after(1000, self.start_life)
+
+        # Launching the function again after a certain amount of time
+        self.reproduction = self.after(Grid.TIME_BETWEEN_GENERATIONS, self.start_life)
     
     def stop_life(self):
         """ Stops the life processus """
@@ -130,8 +139,8 @@ class Grid(tk.Canvas):
         Empties the grid
         Binds the cells with the click button to set the initial population
         """
-        self.button_stop['state']="disabled"
         self.button_restart['state']="disabled"
+        self.button_stop['state']="disabled"
         self.button_stop['text']="Stop"
         self.colors = self.colors * 0
         for i in range(Grid.NB_CASES_WIDTH):
