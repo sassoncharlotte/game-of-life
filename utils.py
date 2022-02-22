@@ -1,7 +1,7 @@
 from typing import Tuple
 import numpy as np
 
-def nb_of_black_cells(all_colors: np.ndarray, coordinates: Tuple[int, int]):
+def nb_of_black_cells(all_colors: np.ndarray, coordinates: Tuple[int, int]) -> int:
     abcisses, ordinates = [], []
     width, height = all_colors.shape
 
