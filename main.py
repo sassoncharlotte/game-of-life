@@ -13,7 +13,7 @@ class Grid(tk.Canvas):
     TIME_BETWEEN_GENERATIONS = 800
 
     def __init__(self, container):
-        super().__init__(container, height=600, width=1000)
+        super().__init__(container, height=600, width=550)
         self.cells = []
         self.colors = np.empty((Grid.NB_CASES_WIDTH, Grid.NB_CASES_HEIGHT))
         self.neighbours = np.empty((Grid.NB_CASES_WIDTH, Grid.NB_CASES_HEIGHT))
@@ -23,11 +23,11 @@ class Grid(tk.Canvas):
 
     def __game_setup(self):
         self.button_start = Button(self, text="Start", command=self.start_life, state="disabled")
-        _ = self.create_window(10, 550, anchor="nw", window=self.button_start)
+        _ = self.create_window(120, 550, anchor="nw", window=self.button_start)
         self.button_stop = Button(self, text="Stop", command=self.stop_life, state="disabled")
-        _ = self.create_window(100, 550, anchor="nw", window=self.button_stop)
+        _ = self.create_window(220, 550, anchor="nw", window=self.button_stop)
         self.button_restart = Button(self, text="Restart", command=self.restart, state="disabled")
-        _ = self.create_window(190, 550, anchor="nw", window=self.button_restart)
+        _ = self.create_window(320, 550, anchor="nw", window=self.button_restart)
         self.pack()
 
         self.create_grid()
@@ -119,6 +119,7 @@ class Grid(tk.Canvas):
 
         # Checking that the population is not extinct
         if not self.__not_extinct():
+            self.restart()
             return
 
         # Going to the next generation
@@ -129,9 +130,13 @@ class Grid(tk.Canvas):
     
     def stop_life(self):
         """ Stops the life processus """
+        # Adapting the buttons
+        self.button_start['state']="disabled"
         self.button_restart['state']="normal"
+        self.button_stop['state']="normal"
         self.button_stop['text']="Continue"
         self.button_stop['command']=self.start_life
+
         self.after_cancel(self.reproduction)
     
     def restart(self):
@@ -139,9 +144,13 @@ class Grid(tk.Canvas):
         Empties the grid
         Binds the cells with the click button to set the initial population
         """
+        # Adapting the buttons
+        self.button_start['state']="disabled"
         self.button_restart['state']="disabled"
         self.button_stop['state']="disabled"
         self.button_stop['text']="Stop"
+        self.button_stop['command']=self.stop_life
+
         self.colors = self.colors * 0
         for i in range(Grid.NB_CASES_WIDTH):
             for j in range(Grid.NB_CASES_HEIGHT):
