@@ -12,7 +12,7 @@ class Grid(tk.Canvas):
     NB_CASES_HEIGHT = 19
     TIME_BETWEEN_GENERATIONS = 800
 
-    def __init__(self, container):
+    def __init__(self, container) -> None:
         super().__init__(container, height=600, width=550)
         self.cells = []
         self.colors = np.empty((Grid.NB_CASES_WIDTH, Grid.NB_CASES_HEIGHT))
@@ -21,7 +21,7 @@ class Grid(tk.Canvas):
 
         self.__game_setup()
 
-    def __game_setup(self):
+    def __game_setup(self) -> None:
         self.button_start = Button(self, text="Start", command=self.start_life, state="disabled")
         _ = self.create_window(120, 550, anchor="nw", window=self.button_start)
         self.button_stop = Button(self, text="Stop", command=self.stop_life, state="disabled")
@@ -32,7 +32,7 @@ class Grid(tk.Canvas):
 
         self.create_grid()
 
-    def __change_color(self, coordinates: Tuple[int, int]):
+    def __change_color(self, coordinates: Tuple[int, int]) -> None:
         """ Changes the color of the cell """
         self.button_start['state']="normal"
         x, y = coordinates
@@ -43,17 +43,17 @@ class Grid(tk.Canvas):
             self.itemconfig(self.cells[x][y], fill="black")
             self.colors[x][y]=1
 
-    def __binds_grid(self):
+    def __binds_grid(self) -> None:
         for j in range(Grid.NB_CASES_HEIGHT):
             for i in range(Grid.NB_CASES_WIDTH):
                 self.tag_bind(self.cells[i][j], '<Button>', lambda event, coordinates=(i, j): self.__change_color(coordinates))
 
-    def __unbinds_grid(self):
+    def __unbinds_grid(self) -> None:
         for j in range(Grid.NB_CASES_HEIGHT):
             for i in range(Grid.NB_CASES_WIDTH):
                 self.tag_unbind(self.cells[i][j], '<Button>')
     
-    def __compute_all_neighbours(self):
+    def __compute_all_neighbours(self) -> None:
         for i in range(Grid.NB_CASES_WIDTH):
             for j in range(Grid.NB_CASES_HEIGHT):
                 self.neighbours[i][j] = nb_of_black_cells(self.colors, (i, j))
@@ -65,7 +65,7 @@ class Grid(tk.Canvas):
             return True
         return False
 
-    def create_grid(self):
+    def create_grid(self) -> None:
         """
         Creates the grid on the canvas
         Binds the cells with the click button to set the initial population
@@ -86,7 +86,7 @@ class Grid(tk.Canvas):
             self.cells += [row]
         self.__binds_grid()
 
-    def one_generation(self):
+    def one_generation(self) -> None:
         """
         Computes the neighbours of all cells
         Displays the next generation of cells
@@ -105,7 +105,7 @@ class Grid(tk.Canvas):
                         self.colors[i][j]=0
                         self.itemconfig(cell, fill = "white")
 
-    def start_life(self):
+    def start_life(self) -> None:
         """ Start the life processus """
         # Adapting the buttons
         self.button_restart['state']="disabled"
@@ -128,7 +128,7 @@ class Grid(tk.Canvas):
         # Launching the function again after a certain amount of time
         self.reproduction = self.after(Grid.TIME_BETWEEN_GENERATIONS, self.start_life)
     
-    def stop_life(self):
+    def stop_life(self) -> None:
         """ Stops the life processus """
         # Adapting the buttons
         self.button_start['state']="disabled"
@@ -139,7 +139,7 @@ class Grid(tk.Canvas):
 
         self.after_cancel(self.reproduction)
     
-    def restart(self):
+    def restart(self) -> None:
         """
         Empties the grid
         Binds the cells with the click button to set the initial population
@@ -159,13 +159,13 @@ class Grid(tk.Canvas):
 
 
 class GameLife(ttk.Frame):
-    def __init__(self, container)-> None:
+    def __init__(self, container) -> None:
         super().__init__(container)
         self.pack()
 
 
 class App(tk.Tk):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.title("Game of Life")
         self.geometry(str(self.winfo_screenwidth()) + 'x' + str(self.winfo_screenheight()))
